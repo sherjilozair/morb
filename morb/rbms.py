@@ -9,6 +9,35 @@ import numpy as np
 
 ### RBMS ###
 
+class BetaBinaryRBM(RBM): # the basic RBM, with binary visibles and binary hiddens
+    def __init__(self, n_visible, n_hidden):
+        super(BetaBinaryRBM, self).__init__()
+        # data shape
+        self.n_visible = n_visible
+        self.n_hidden = n_hidden
+        # units
+        self.v = units.BetaUnits(self, name='v') # visibles
+        self.h = units.BinaryUnits(self, name='h') # hiddens
+        # parameters
+        self.W1 = parameters.ProdParameters(self, [self.v.log1_units, self.h], theano.shared(value = self._initial_W(), name='W1'), name='W1') # weights
+        self.W2 = parameters.ProdParameters(self, [self.v.log2_units, self.h], theano.shared(value = self._initial_W(), name='W2'), name='W2') # weights
+        self.b1v = parameters.BiasParameters(self, self.v.log1_units, theano.shared(value = self._initial_bv(), name='b1v'), name='b1v') # visible log(v)   bias
+        self.b2v = parameters.BiasParameters(self, self.v.log2_units, theano.shared(value = self._initial_bv(), name='b2v'), name='b2v') # visible log(1-v) bias
+        self.bh = parameters.BiasParameters(self, self.h, theano.shared(value = self._initial_bh(), name='bh'), name='bh') # hidden bias
+
+    def _initial_W(self):
+        return np.asarray( np.random.uniform(
+                   low   = -4*np.sqrt(6./(self.n_hidden+self.n_visible)),
+                   high  =  4*np.sqrt(6./(self.n_hidden+self.n_visible)),
+                   size  =  (self.n_visible, self.n_hidden)),
+                   dtype =  theano.config.floatX)
+
+    def _initial_bv(self):
+        return np.zeros(self.n_visible, dtype = theano.config.floatX)
+
+    def _initial_bh(self):
+        return np.zeros(self.n_hidden, dtype = theano.config.floatX)
+
 class BinaryBinaryRBM(RBM): # the basic RBM, with binary visibles and binary hiddens
     def __init__(self, n_visible, n_hidden):
         super(BinaryBinaryRBM, self).__init__()
@@ -22,20 +51,20 @@ class BinaryBinaryRBM(RBM): # the basic RBM, with binary visibles and binary hid
         self.W = parameters.ProdParameters(self, [self.v, self.h], theano.shared(value = self._initial_W(), name='W'), name='W') # weights
         self.bv = parameters.BiasParameters(self, self.v, theano.shared(value = self._initial_bv(), name='bv'), name='bv') # visible bias
         self.bh = parameters.BiasParameters(self, self.h, theano.shared(value = self._initial_bh(), name='bh'), name='bh') # hidden bias
-        
+
     def _initial_W(self):
         return np.asarray( np.random.uniform(
                    low   = -4*np.sqrt(6./(self.n_hidden+self.n_visible)),
                    high  =  4*np.sqrt(6./(self.n_hidden+self.n_visible)),
                    size  =  (self.n_visible, self.n_hidden)),
                    dtype =  theano.config.floatX)
-        
+
     def _initial_bv(self):
         return np.zeros(self.n_visible, dtype = theano.config.floatX)
-        
+
     def _initial_bh(self):
         return np.zeros(self.n_hidden, dtype = theano.config.floatX)
-              
+
 
 
 class BinaryBinaryCRBM(BinaryBinaryRBM):
@@ -71,17 +100,17 @@ class GaussianBinaryRBM(RBM): # Gaussian visible units
         self.W = parameters.ProdParameters(self, [self.v, self.h], theano.shared(value = self._initial_W(), name='W'), name='W') # weights
         self.bv = parameters.BiasParameters(self, self.v, theano.shared(value = self._initial_bv(), name='bv'), name='bv') # visible bias
         self.bh = parameters.BiasParameters(self, self.h, theano.shared(value = self._initial_bh(), name='bh'), name='bh') # hidden bias
-        
+
     def _initial_W(self):
         return np.asarray( np.random.uniform(
                    low   = -4*np.sqrt(6./(self.n_hidden+self.n_visible)),
                    high  =  4*np.sqrt(6./(self.n_hidden+self.n_visible)),
                    size  =  (self.n_visible, self.n_hidden)),
                    dtype =  theano.config.floatX)
-        
+
     def _initial_bv(self):
         return np.zeros(self.n_visible, dtype = theano.config.floatX)
-        
+
     def _initial_bh(self):
         return np.zeros(self.n_hidden, dtype = theano.config.floatX)
 
@@ -105,14 +134,14 @@ class LearntPrecisionGaussianBinaryRBM(RBM):
         self.bvm = parameters.BiasParameters(self, self.v, theano.shared(value = self._initial_bias(self.n_visible), name='bvm'), name='bvm') # visible bias
         self.bvp = parameters.BiasParameters(self, self.v.precision_units, theano.shared(value = self._initial_bias(self.n_visible), name='bvp'), name='bvp') # precision bias
         self.bh = parameters.BiasParameters(self, self.h, theano.shared(value = self._initial_bias(self.n_hidden), name='bh'), name='bh') # hidden bias
-        
+
     def _initial_W(self):
         return np.asarray( np.random.uniform(
                    low   = -4*np.sqrt(6./(self.n_hidden+self.n_visible)),
                    high  =  4*np.sqrt(6./(self.n_hidden+self.n_visible)),
                    size  =  (self.n_visible, self.n_hidden)),
                    dtype =  theano.config.floatX)
-        
+
     def _initial_bias(self, n):
         return np.zeros(n, dtype = theano.config.floatX)
 
@@ -139,14 +168,14 @@ class LearntPrecisionSeparateGaussianBinaryRBM(RBM):
         self.bvp = parameters.BiasParameters(self, self.v.precision_units, theano.shared(value = self._initial_bias(self.n_visible), name='bvp'), name='bvp') # precision bias
         self.bhm = parameters.BiasParameters(self, self.hm, theano.shared(value = self._initial_bias(self.n_hidden_mean), name='bhm'), name='bhm') # hidden bias for mean
         self.bhp = parameters.BiasParameters(self, self.hp, theano.shared(value = self._initial_bias(self.n_hidden_precision)+1.0, name='bhp'), name='bhp') # hidden bias for precision
-        
+
     def _initial_W(self, nv, nh):
         return np.asarray( np.random.uniform(
                    low   = -4*np.sqrt(6./(nv+nh)),
                    high  =  4*np.sqrt(6./(nv+nh)),
                    size  =  (nv, nh)),
                    dtype =  theano.config.floatX)
-        
+
     def _initial_bias(self, n):
         return np.zeros(n, dtype = theano.config.floatX)
 
@@ -165,7 +194,7 @@ class TruncExpBinaryRBM(RBM): # RBM with truncated exponential visibles and bina
         self.W = parameters.ProdParameters(self, [self.v, self.h], theano.shared(value = self._initial_W(), name='W'), name='W') # weights
         self.bv = parameters.BiasParameters(self, self.v, theano.shared(value = self._initial_bv(), name='bv'), name='bv') # visible bias
         self.bh = parameters.BiasParameters(self, self.h, theano.shared(value = self._initial_bh(), name='bh'), name='bh') # hidden bias
-        
+
     def _initial_W(self):
 #        return np.asarray( np.random.uniform(
 #                   low   = -4*np.sqrt(6./(self.n_hidden+self.n_visible)),
@@ -176,9 +205,9 @@ class TruncExpBinaryRBM(RBM): # RBM with truncated exponential visibles and bina
         return np.asarray( np.random.normal(0, 0.01,
                    size  =  (self.n_visible, self.n_hidden)),
                    dtype =  theano.config.floatX)
-        
+
     def _initial_bv(self):
         return np.zeros(self.n_visible, dtype = theano.config.floatX)
-        
+
     def _initial_bh(self):
         return np.zeros(self.n_hidden, dtype = theano.config.floatX)

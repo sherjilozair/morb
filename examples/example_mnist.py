@@ -47,7 +47,9 @@ epochs = 1000
 
 
 print ">> Constructing RBM..."
-rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
+#rbm = rbms.BinaryBinaryRBM(n_visible, n_hidden)
+rbm = rbms.BetaBinaryRBM(n_visible, n_hidden)
+
 #rbm = rbms.TruncExpBinaryRBM(n_visible, n_hidden)
 initial_vmap = { rbm.v: T.matrix('v') }
 
@@ -86,18 +88,17 @@ def plot_data(d):
 
 def sample_evolution(start, ns=100): # start = start data
     sample = t.compile_function(initial_vmap, mb_size=1, monitors=[m_model], name='evaluate', train=False, mode=mode)
-    
+
     data = start
     plot_data(data)
-    
+
 
     while True:
         for k in range(ns):
             for x in sample({ rbm.v: data }): # draw a new sample
                 data = x[0]
-            
+
         plot_data(data)
-        
 
 
 
@@ -107,7 +108,8 @@ def sample_evolution(start, ns=100): # start = start data
 
 
 
-# TRAINING 
+
+# TRAINING
 
 print ">> Training for %d epochs..." % epochs
 
@@ -124,13 +126,13 @@ for epoch in range(epochs):
     mse_train = np.mean(mses_train)
     edata_train = np.mean(edata_train_list)
     emodel_train = np.mean(emodel_train_list)
-    
+
     monitoring_data = [(cost, data, model, energy_data, energy_model) for cost, data, model, energy_data, energy_model in evaluate({ rbm.v: valid_set_x })]
     mses_valid, vdata, vmodel, edata, emodel = zip(*monitoring_data)
     mse_valid = np.mean(mses_valid)
     edata_valid = np.mean(edata)
     emodel_valid = np.mean(emodel)
-    
+
     # plotting
     mses_train_so_far.append(mse_train)
     mses_valid_so_far.append(mse_valid)
@@ -138,7 +140,7 @@ for epoch in range(epochs):
     emodel_so_far.append(emodel_valid)
     edata_train_so_far.append(edata_train)
     emodel_train_so_far.append(emodel_train)
-    
+
     plt.figure(1)
     plt.clf()
     plt.plot(mses_train_so_far, label='train')
@@ -146,7 +148,7 @@ for epoch in range(epochs):
     plt.title("MSE")
     plt.legend()
     plt.draw()
-    
+
     plt.figure(4)
     plt.clf()
     plt.plot(edata_so_far, label='validation / data')
@@ -156,7 +158,7 @@ for epoch in range(epochs):
     plt.title("energy")
     plt.legend()
     plt.draw()
-    
+
     # plot some samples
     plt.figure(2)
     plt.clf()
@@ -167,7 +169,7 @@ for epoch in range(epochs):
     plt.imshow(vmodel[0][0].reshape((28, 28)))
     plt.draw()
 
-    
+
     print "Epoch %d" % epoch
     print "training set: MSE = %.6f, data energy = %.2f, model energy = %.2f" % (mse_train, edata_train, emodel_train)
     print "validation set: MSE = %.6f, data energy = %.2f, model energy = %.2f" % (mse_valid, edata_valid, emodel_valid)
